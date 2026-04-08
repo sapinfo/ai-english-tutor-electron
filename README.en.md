@@ -78,13 +78,25 @@ npm run dev
 | 🎤 / 🎙️ | Mute/unmute microphone |
 | 🔊 / 🔇 | Enable/disable TTS playback |
 
-## Build
+## Download
+
+Download platform-specific installers from the [Releases page](https://github.com/sapinfo/ai-english-tutor-electron/releases).
+
+| Platform | File |
+|----------|------|
+| macOS | `.dmg` |
+| Windows | `.exe` (NSIS installer) |
+| Linux | `.AppImage`, `.deb` |
+
+## Build (Developers)
 
 ```bash
 npm run build:mac    # macOS DMG
 npm run build:win    # Windows installer
-npm run build:linux  # Linux AppImage
+npm run build:linux  # Linux AppImage, deb
 ```
+
+Pushing a tag to GitHub triggers GitHub Actions to auto-build for all 3 platforms and publish to Releases.
 
 ## Project Structure
 

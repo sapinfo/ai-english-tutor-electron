@@ -78,13 +78,25 @@ npm run dev
 | 🎤 / 🎙️ | 마이크 음소거/해제 |
 | 🔊 / 🔇 | 음성 합성 켜기/끄기 |
 
-## 빌드
+## 다운로드
+
+[Releases 페이지](https://github.com/sapinfo/ai-english-tutor-electron/releases)에서 플랫폼별 설치 파일을 다운로드하세요.
+
+| 플랫폼 | 파일 |
+|--------|------|
+| macOS | `.dmg` |
+| Windows | `.exe` (NSIS 설치 파일) |
+| Linux | `.AppImage`, `.deb` |
+
+## 빌드 (개발자용)
 
 ```bash
 npm run build:mac    # macOS DMG
 npm run build:win    # Windows 설치 파일
-npm run build:linux  # Linux AppImage
+npm run build:linux  # Linux AppImage, deb
 ```
+
+GitHub에 태그를 푸시하면 GitHub Actions가 자동으로 3개 플랫폼 빌드 후 Release에 게시합니다.
 
 ## 프로젝트 구조
 
