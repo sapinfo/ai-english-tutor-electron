@@ -9,22 +9,33 @@ const isDev = !app.isPackaged
 // ─── Kokoro TTS Server Process ───────────────────────────────────
 let kokoroProcess = null
 
+function getPythonCommand() {
+  if (process.platform === 'win32') return 'python'
+  return 'python3'
+}
+
 function startKokoroServer() {
   const serverPath = isDev
     ? join(process.cwd(), 'resources', 'kokoro_tts_server.py')
     : join(process.resourcesPath, 'kokoro_tts_server.py')
 
-  console.log('[Kokoro] Starting TTS server:', serverPath)
+  const pythonCmd = getPythonCommand()
+  console.log(`[Kokoro] Starting TTS server: ${pythonCmd} ${serverPath}`)
 
-  kokoroProcess = spawn('python3', [serverPath], {
+  const extraPath =
+    process.platform === 'win32'
+      ? ''
+      : ':/usr/local/bin:/opt/homebrew/bin'
+
+  kokoroProcess = spawn(pythonCmd, [serverPath], {
     stdio: ['ignore', 'pipe', 'pipe'],
-    detached: true,
-    env: { ...process.env, PATH: process.env.PATH + ':/usr/local/bin:/opt/homebrew/bin' }
+    detached: process.platform !== 'win32',
+    env: { ...process.env, PATH: (process.env.PATH || '') + extraPath }
   })
 
   kokoroProcess.stdout.on('data', (d) => console.log(`[Kokoro] ${d.toString().trim()}`))
   kokoroProcess.stderr.on('data', (d) => console.log(`[Kokoro] ${d.toString().trim()}`))
-  kokoroProcess.unref()
+  if (process.platform !== 'win32') kokoroProcess.unref()
 
   kokoroProcess.on('error', (err) => {
     console.error('[Kokoro] Failed to start:', err.message)
@@ -40,17 +51,28 @@ function startKokoroServer() {
 function stopKokoroServer() {
   if (kokoroProcess) {
     try {
-      process.kill(-kokoroProcess.pid, 'SIGTERM')
+      if (process.platform === 'win32') {
+        const { execSync } = require('child_process')
+        execSync(`taskkill /PID ${kokoroProcess.pid} /T /F 2>nul`)
+      } else {
+        process.kill(-kokoroProcess.pid, 'SIGTERM')
+      }
     } catch (_e) {
       try { kokoroProcess.kill('SIGTERM') } catch (_e2) { /* ignore */ }
     }
     kokoroProcess = null
   }
-  // Also kill anything on port 8881 as fallback
+  // Fallback: kill anything on port 8881
   try {
     const { execSync } = require('child_process')
-    const pids = execSync('lsof -ti:8881 2>/dev/null').toString().trim()
-    if (pids) execSync(`kill ${pids} 2>/dev/null`)
+    if (process.platform === 'win32') {
+      const out = execSync('netstat -ano | findstr :8881 | findstr LISTENING 2>nul').toString()
+      const match = out.match(/\s(\d+)\s*$/)
+      if (match) execSync(`taskkill /PID ${match[1]} /F 2>nul`)
+    } else {
+      const pids = execSync('lsof -ti:8881 2>/dev/null').toString().trim()
+      if (pids) execSync(`kill ${pids} 2>/dev/null`)
+    }
   } catch (_e) { /* ignore */ }
 }
 
