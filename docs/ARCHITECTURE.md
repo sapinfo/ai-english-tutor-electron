@@ -1,4 +1,4 @@
-# Architecture — AI English Tutor (Electron)
+# Architecture — TalkWith Sarah (AI English Tutor)
 
 ## System Overview
 
