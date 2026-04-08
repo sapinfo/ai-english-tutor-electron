@@ -26,12 +26,16 @@ A desktop voice-based English learning app powered by AI. Practice real-time con
 
 ## Prerequisites
 
-- **macOS** with Apple Silicon (M1/M2/M3/M4) — required for Kokoro MLX
 - **Node.js** 18+
-- **Python** 3.12+ with pip packages:
-  ```bash
-  pip install kokoro-mlx fastapi uvicorn soundfile numpy
-  ```
+- **Python** 3.12+
+- **Kokoro TTS** — platform-specific setup required → **[Kokoro TTS Setup Guide](docs/KOKORO_SETUP.md)**
+
+| Platform | TTS Package | GPU Acceleration | Speed |
+|----------|------------|-----------------|-------|
+| macOS (Apple Silicon) | `kokoro-mlx` | MLX (auto) | ~0.5s |
+| macOS (Intel) | `kokoro` + `onnxruntime` | None | ~2s |
+| Windows | `kokoro` + `onnxruntime-gpu` | NVIDIA CUDA | ~0.5-3s |
+| Linux | `kokoro` + `onnxruntime-gpu` | NVIDIA CUDA | ~0.5-3s |
 
 ## API Keys (Free Tier)
 
