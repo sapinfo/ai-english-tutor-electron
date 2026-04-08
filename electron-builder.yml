@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: ai-english-tutor
+appId: com.sapinfo.talkwith-sarah
+productName: TalkWith Sarah
 directories:
   buildResources: build
 files:
@@ -24,6 +24,7 @@ nsis:
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
+  entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.

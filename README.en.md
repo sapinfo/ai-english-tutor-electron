@@ -61,22 +61,37 @@ npm run dev
 
 ## Usage
 
-1. Launch the app with `npm run dev`
-2. Click **Settings** and enter your Groq and Speechmatics API keys
-3. Click **TTS Start** button and wait for "TTS: On" status
-4. Select a lesson (or Free Talk)
-5. Click **Start** and begin speaking in English
-6. Ms. Sarah will teach, correct, and guide you through the lesson
+### First Time: Set API Keys
+1. Launch the app
+2. Click **Settings** (top right)
+3. Enter **Groq** API key (from console.groq.com)
+4. Enter **Speechmatics** API key (from portal.speechmatics.com)
+5. Click **Save**
 
-## Controls
+### Every Session: Follow This Order
+
+```
+① TTS Start  →  ② Select Lesson  →  ③ Start  →  Learn  →  ④ End Lesson  →  ⑤ TTS Stop
+```
+
+| Step | Action | Description |
+|------|--------|-------------|
+| ① | Click **TTS Start** | Start TTS server (wait until "TTS: On") |
+| ② | Select a lesson | Click a lesson card (or Free Talk) |
+| ③ | Click **Start** | Microphone activates, Ms. Sarah begins teaching |
+| | Speak in English | Ms. Sarah teaches, corrects, and guides you |
+| | **Next Section →** | Move to next section (optional) |
+| ④ | Click **End Lesson** | End session, progress auto-saved |
+| ⑤ | Click **TTS Stop** | Shut down TTS server (free resources) |
+
+> **Important**: The TTS server uses ~200MB of memory. Always click **TTS Stop** when you're done to free resources.
+
+### In-Lesson Controls
 
 | Button | Function |
 |--------|----------|
-| TTS Start/Stop | Start or stop Kokoro TTS server |
-| Start / End Lesson | Begin or end a lesson session |
-| Next Section → | Advance to next lesson section |
 | 🎤 / 🎙️ | Mute/unmute microphone |
-| 🔊 / 🔇 | Enable/disable TTS playback |
+| 🔊 / 🔇 | Enable/disable TTS playback (server stays running) |
 
 ## Download
 

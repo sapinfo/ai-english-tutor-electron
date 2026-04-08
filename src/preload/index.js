@@ -19,7 +19,10 @@ const api = {
   // Kokoro TTS server management
   getKokoroStatus: () => ipcRenderer.invoke('tts:kokoro-status'),
   startKokoro: () => ipcRenderer.invoke('tts:kokoro-start'),
-  stopKokoro: () => ipcRenderer.invoke('tts:kokoro-stop')
+  stopKokoro: () => ipcRenderer.invoke('tts:kokoro-stop'),
+
+  // Kokoro error events
+  onKokoroError: (callback) => ipcRenderer.on('kokoro:error', (_e, msg) => callback(msg))
 }
 
 if (process.contextIsolated) {

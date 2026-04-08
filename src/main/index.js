@@ -1,6 +1,6 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, session, systemPreferences } from 'electron'
 import { join } from 'path'
-import { spawn } from 'child_process'
+import { spawn, execSync } from 'child_process'
 import icon from '../../resources/icon.png?asset'
 import Database from 'better-sqlite3'
 
@@ -9,8 +9,51 @@ const isDev = !app.isPackaged
 // ─── Kokoro TTS Server Process ───────────────────────────────────
 let kokoroProcess = null
 
-function getPythonCommand() {
-  if (process.platform === 'win32') return 'python'
+function findPython() {
+  if (process.platform === 'win32') {
+    for (const cmd of ['python', 'python3']) {
+      try {
+        execSync(`${cmd} --version`, { stdio: 'ignore' })
+        return cmd
+      } catch (_e) { /* try next */ }
+    }
+    return 'python'
+  }
+
+  // macOS/Linux: try common paths (packaged app doesn't inherit shell PATH)
+  const candidates = [
+    '/usr/local/bin/python3',
+    '/opt/homebrew/bin/python3',
+    '/usr/bin/python3'
+  ]
+
+  // Also check pyenv, conda, etc from HOME
+  const home = process.env.HOME || ''
+  if (home) {
+    candidates.unshift(
+      `${home}/.pyenv/shims/python3`,
+      `${home}/.pyenv/versions/3.12.3/bin/python3`,
+      `${home}/miniconda3/bin/python3`,
+      `${home}/anaconda3/bin/python3`
+    )
+  }
+
+  // Try shell login to get real PATH
+  try {
+    const shellPath = execSync('/bin/zsh -ilc "echo $PATH" 2>/dev/null').toString().trim()
+    if (shellPath) {
+      const found = execSync(`/bin/zsh -ilc "which python3" 2>/dev/null`).toString().trim()
+      if (found) return found
+    }
+  } catch (_e) { /* ignore */ }
+
+  for (const p of candidates) {
+    try {
+      execSync(`${p} --version`, { stdio: 'ignore' })
+      return p
+    } catch (_e) { /* try next */ }
+  }
+
   return 'python3'
 }
 
@@ -19,18 +62,12 @@ function startKokoroServer() {
     ? join(process.cwd(), 'resources', 'kokoro_tts_server.py')
     : join(process.resourcesPath, 'kokoro_tts_server.py')
 
-  const pythonCmd = getPythonCommand()
+  const pythonCmd = findPython()
   console.log(`[Kokoro] Starting TTS server: ${pythonCmd} ${serverPath}`)
-
-  const extraPath =
-    process.platform === 'win32'
-      ? ''
-      : ':/usr/local/bin:/opt/homebrew/bin'
 
   kokoroProcess = spawn(pythonCmd, [serverPath], {
     stdio: ['ignore', 'pipe', 'pipe'],
-    detached: process.platform !== 'win32',
-    env: { ...process.env, PATH: (process.env.PATH || '') + extraPath }
+    detached: process.platform !== 'win32'
   })
 
   kokoroProcess.stdout.on('data', (d) => console.log(`[Kokoro] ${d.toString().trim()}`))
@@ -40,11 +77,22 @@ function startKokoroServer() {
   kokoroProcess.on('error', (err) => {
     console.error('[Kokoro] Failed to start:', err.message)
     kokoroProcess = null
+    // Notify renderer
+    const win = BrowserWindow.getAllWindows()[0]
+    if (win) {
+      win.webContents.send('kokoro:error', `Python을 찾을 수 없습니다. Python 3.12+를 설치해주세요.\n(${err.message})`)
+    }
   })
 
   kokoroProcess.on('close', (code) => {
     console.log(`[Kokoro] Server exited with code ${code}`)
     kokoroProcess = null
+    if (code !== 0 && code !== null) {
+      const win = BrowserWindow.getAllWindows()[0]
+      if (win) {
+        win.webContents.send('kokoro:error', `Kokoro TTS 서버가 종료되었습니다 (code: ${code}). Python 패키지를 확인해주세요.\npip install kokoro-mlx fastapi uvicorn soundfile numpy`)
+      }
+    }
   })
 }
 
@@ -368,10 +416,29 @@ function createWindow() {
 }
 
 // ─── App lifecycle ───────────────────────────────────────────────
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   if (process.platform === 'win32') {
     app.setAppUserModelId('com.electron')
   }
+
+  // Request macOS microphone permission proactively
+  if (process.platform === 'darwin') {
+    const micStatus = systemPreferences.getMediaAccessStatus('microphone')
+    if (micStatus !== 'granted') {
+      await systemPreferences.askForMediaAccess('microphone')
+    }
+  }
+
+  // Allow microphone and other media permissions
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    const allowed = ['media', 'microphone', 'audioCapture']
+    callback(allowed.includes(permission))
+  })
+
+  session.defaultSession.setPermissionCheckHandler((webContents, permission) => {
+    const allowed = ['media', 'microphone', 'audioCapture']
+    return allowed.includes(permission)
+  })
 
   app.on('browser-window-created', (_, window) => {
     // F12 for devtools in dev

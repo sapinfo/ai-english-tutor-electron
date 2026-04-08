@@ -73,6 +73,12 @@
         kokoroCheckInterval = null
       }
     }, 3000)
+
+    // Listen for Kokoro errors from main process
+    window.api.onKokoroError((msg) => {
+      errorMessage = msg
+      kokoroStatus = 'stopped'
+    })
   })
 
   // ─── Progress ──────────────────────────────────────────────────
@@ -1288,6 +1294,8 @@
     color: var(--danger);
     font-size: 13px;
     margin-bottom: 8px;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   /* Controls */
